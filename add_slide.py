@@ -73,9 +73,14 @@ def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
             oleObject_id = int(oleObject_filename.replace('oleObject', '').replace('.bin', ''))
 
             # Step 6. Find the next_oleObject_id
-            oleObject_list = [x for x in os.listdir("{}/ppt/embeddings/".format(TEMP_FOLDER_TARGET))
-                           if 'oleObject' in x]
-            next_oleObject_id = len(oleObject_list) + 1
+            try:
+                oleObject_list = [x for x in os.listdir("{}/ppt/embeddings/".format(TEMP_FOLDER_TARGET))
+                               if 'oleObject' in x]
+                next_oleObject_id = len(oleObject_list) + 1
+            except:
+                #no embeddings folder
+                os.mkdir("{}/ppt/embeddings".format(TEMP_FOLDER_TARGET))
+                next_oleObject_id = 1;
 
 
             copyfile(bin_oleObject.format(TEMP_FOLDER_SOURCE, oleObject_id),
@@ -112,9 +117,14 @@ def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
             image_ext = image_filename.replace('image', '').split(".")[1]
 
             # Step 6. Find the next_image_id
-            image_list = [x for x in os.listdir("{}/ppt/media/".format(TEMP_FOLDER_TARGET))
-                           if 'image' in x]
-            next_image_id = len(image_list) + 1
+            try:
+                image_list = [x for x in os.listdir("{}/ppt/media/".format(TEMP_FOLDER_TARGET))
+                               if 'image' in x]
+                next_image_id = len(image_list) + 1
+            except:
+                #no media folder
+                os.mkdir("{}/ppt/media".format(TEMP_FOLDER_TARGET))
+                next_image_id = 1;
 
 
             copyfile(xxx_image.format(TEMP_FOLDER_SOURCE, image_id, image_ext),
@@ -154,9 +164,15 @@ def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
             vmlDrawing_id = int(vmlDrawing_filename.replace('vmlDrawing', '').replace('.vml', ''))
 
             # Step 6. Find the next_vmlDrawing_id
-            vmlDrawing_list = [x for x in os.listdir("{}/ppt/drawings/".format(TEMP_FOLDER_TARGET))
-                           if 'vmlDrawing' in x]
-            next_vmlDrawing_id = len(vmlDrawing_list) + 1
+            try:
+                vmlDrawing_list = [x for x in os.listdir("{}/ppt/drawings/".format(TEMP_FOLDER_TARGET))
+                               if 'vmlDrawing' in x]
+                next_vmlDrawing_id = len(vmlDrawing_list) + 1
+            except:
+                #no drawings folder
+                os.mkdir("{}/ppt/drawings".format(TEMP_FOLDER_TARGET))
+                os.mkdir("{}/ppt/drawings/_rels".format(TEMP_FOLDER_TARGET))
+                next_vmlDrawing_id = 1;
 
 
             copyfile(vml_Drawing.format(TEMP_FOLDER_SOURCE, vmlDrawing_id),
@@ -219,9 +235,15 @@ def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
             chart_id = int(chart_filename.replace('chart', '').replace('.xml', ''))
 
             # Step 6. Find the next_chart_id
-            chart_list = [x for x in os.listdir("{}/ppt/charts/".format(TEMP_FOLDER_TARGET))
-                           if 'chart' in x]
-            next_chart_id = len(chart_list) + 1
+            try:
+                chart_list = [x for x in os.listdir("{}/ppt/charts/".format(TEMP_FOLDER_TARGET))
+                               if 'chart' in x]
+                next_chart_id = len(chart_list) + 1
+            except:
+                #no charts folder
+                os.mkdir("{}/ppt/charts".format(TEMP_FOLDER_TARGET))
+                next_chart_id = 1;
+            
 
             # Step 7. Get the style#.xml, colors#.xml and #.xlsx filenames and ids
             with open(xml_chart_rel.format(TEMP_FOLDER_SOURCE, chart_id)) as file:
@@ -389,21 +411,21 @@ def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
         )
 
     # Step 15. Edit docProps/app.xml
-    tree = etree.parse('{}/docProps/app.xml'.format(TEMP_FOLDER_TARGET))
-    root = tree.getroot()
-    Paragraphs = root.find("{http://schemas.openxmlformats.org/officeDocument/2006/extended-properties}Paragraphs")
-    Paragraphs.text = unicode(int(Paragraphs.text) + 2)
-    Slides = root.find("{http://schemas.openxmlformats.org/officeDocument/2006/extended-properties}Slides")
-    Slides.text = unicode(int(Slides.text) + 1)
-    HeadingPairs = root.find("{http://schemas.openxmlformats.org/officeDocument/2006/extended-properties}HeadingPairs")
-    vector = HeadingPairs.find("{http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes}vector")
-    vt = vector.getchildren()[7].getchildren()[0]
-    vt.text = unicode(int(vt.text) + 1)
-    TitlesOfParts = root.find("{http://schemas.openxmlformats.org/officeDocument/2006/extended-properties}TitlesOfParts")
-    vector = TitlesOfParts.getchildren()[0]
-    vector.attrib["size"] = unicode(int(vector.attrib["size"]) + 1)
-    lpstr = deepcopy(vector.getchildren()[len(vector) - 1])
-    vector.append(lpstr)
+    # tree = etree.parse('{}/docProps/app.xml'.format(TEMP_FOLDER_TARGET))
+    # root = tree.getroot()
+    # Paragraphs = root.find("{http://schemas.openxmlformats.org/officeDocument/2006/extended-properties}Paragraphs")
+    # Paragraphs.text = unicode(int(Paragraphs.text) + 2)
+    # Slides = root.find("{http://schemas.openxmlformats.org/officeDocument/2006/extended-properties}Slides")
+    # Slides.text = unicode(int(Slides.text) + 1)
+    # HeadingPairs = root.find("{http://schemas.openxmlformats.org/officeDocument/2006/extended-properties}HeadingPairs")
+    # vector = HeadingPairs.find("{http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes}vector")
+    # vt = vector.getchildren()[7].getchildren()[0]
+    # vt.text = unicode(int(vt.text) + 1)
+    # TitlesOfParts = root.find("{http://schemas.openxmlformats.org/officeDocument/2006/extended-properties}TitlesOfParts")
+    # vector = TitlesOfParts.getchildren()[0]
+    # vector.attrib["size"] = unicode(int(vector.attrib["size"]) + 1)
+    # lpstr = deepcopy(vector.getchildren()[len(vector) - 1])
+    # vector.append(lpstr)
 
     with open('{}/docProps/app.xml'.format(TEMP_FOLDER_TARGET), 'w') as file:
         # Hack :: Inject the top tag [<?xml ...] back into the file.
@@ -424,6 +446,4 @@ copy_path = sys.argv[2]
 copy_index = int(sys.argv[3])
 
 duplicate_pptx_sheet(copy_path, copy_index, target_path)
-
-
-	
+print("")
