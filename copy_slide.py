@@ -6,45 +6,24 @@ from shutil import copyfile, rmtree
 from opcdiag.controller import OpcController
 
 
-def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
-    """
-    A method that duplicates a slide in a PowerPoint file
-
-    Parameters
-    ----------
-    filename : string
-        The filename contains the location of the original powerpoint file that
-        will have a slide duplicated.
-
-    slide_number : int
-        The slide_number is the index of the slide that is supposed to be
-        duplicated in the powerpoint file.
-        Note: The index starts counting from 1 NOT 0
-
-    filename_output : string
-        The filename_output is the name of the file that will be created.
-        Note: If the filename_output is not supplied, then the input file
-              get's owerridden.
-
-    Returns : nothing
-    """
-
-    if filename_output is None:
-        filename_output = filename
-
-    # Step 1. Extract filename & filename_output
+def copy_pptx_sheet(copy_path, slide_number, target_path):
+    # Step 1. Extract copy_path & target_path
     opc = OpcController()
-    TEMP_FOLDER_SOURCE = filename.replace(".pptx", '')
-    opc.extract_package(filename, TEMP_FOLDER_SOURCE)
+    TEMP_FOLDER_SOURCE = copy_path.replace(".pptx", '')
+    opc.extract_package(copy_path, TEMP_FOLDER_SOURCE)
 
-    TEMP_FOLDER_TARGET = filename_output.replace(".pptx", '')
-    opc.extract_package(filename_output, TEMP_FOLDER_TARGET)
+    TEMP_FOLDER_TARGET = target_path.replace(".pptx", '')
+    opc.extract_package(target_path, TEMP_FOLDER_TARGET)
 
-    # Step 2. Find the next_slide_id of filename_output
+    # Step 2. Find the next_slide_id of target_path
     slides_list = [x for x in os.listdir("{}/ppt/slides/".format(TEMP_FOLDER_TARGET))
                    if '.xml' in x]
     slides_count = len(slides_list)
     next_slide_id = slides_count + 1
+    for index in range(len(slides_list)):
+        if not any("slide{}.xml".format(index + 1) in s for s in slides_list):
+            next_slide_id = index + 1
+            break
 
     # Step 3. Copy the oldslide and it's relationship
     xml_slide = "{}/ppt/slides/slide{}.xml"
@@ -77,6 +56,10 @@ def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
                 oleObject_list = [x for x in os.listdir("{}/ppt/embeddings/".format(TEMP_FOLDER_TARGET))
                                if 'oleObject' in x]
                 next_oleObject_id = len(oleObject_list) + 1
+                for index in range(len(oleObject_list)):
+                    if not any("oleObject{}.bin".format((index + 1)) in s for s in oleObject_list):
+                        next_oleObject_id = index + 1
+                        break
             except:
                 #no embeddings folder
                 os.mkdir("{}/ppt/embeddings".format(TEMP_FOLDER_TARGET))
@@ -119,8 +102,13 @@ def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
             # Step 6. Find the next_image_id
             try:
                 image_list = [x for x in os.listdir("{}/ppt/media/".format(TEMP_FOLDER_TARGET))
-                               if 'image' in x]
+                               if '.{}'.format(image_ext) in x]
                 next_image_id = len(image_list) + 1
+                for index in range(len(image_list)):
+                    if not any("image{}.{}".format((index + 1), image_ext) in s for s in image_list):
+                        next_image_id = index + 1
+                        break
+                
             except:
                 #no media folder
                 os.mkdir("{}/ppt/media".format(TEMP_FOLDER_TARGET))
@@ -167,7 +155,12 @@ def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
             try:
                 vmlDrawing_list = [x for x in os.listdir("{}/ppt/drawings/".format(TEMP_FOLDER_TARGET))
                                if 'vmlDrawing' in x]
-                next_vmlDrawing_id = len(vmlDrawing_list) + 1
+                vmlDrawing_count = len(vmlDrawing_list)
+                next_vmlDrawing_id = vmlDrawing_count + 1
+                for index in range(len(vmlDrawing_list)):
+                    if not any("vmlDrawing{}.vml".format(index + 1) in vmlDrawing for vmlDrawing in vmlDrawing_list):
+                        next_vmlDrawing_id = index + 1
+                        break
             except:
                 #no drawings folder
                 os.mkdir("{}/ppt/drawings".format(TEMP_FOLDER_TARGET))
@@ -239,6 +232,10 @@ def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
                 chart_list = [x for x in os.listdir("{}/ppt/charts/".format(TEMP_FOLDER_TARGET))
                                if 'chart' in x]
                 next_chart_id = len(chart_list) + 1
+                for index in range(len(chart_list)):
+                    if not any("chart{}.xml".format((index + 1)) in s for s in chart_list):
+                        next_chart_id = index + 1
+                        break
             except:
                 #no charts folder
                 os.mkdir("{}/ppt/charts".format(TEMP_FOLDER_TARGET))
@@ -262,9 +259,13 @@ def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
             # Note: The "-1" id's are used later to skip checking if the id
             # exists. The replace method won't find the -1 ids, so it skips them.
             if style_filename is not None:
-                next_style_id = len([f for f
-                                     in os.listdir('{}/ppt/charts/'.format(TEMP_FOLDER_TARGET))
-                                     if 'style' in f]) + 1
+                style_list = [x for x in os.listdir("{}/ppt/charts/".format(TEMP_FOLDER_TARGET))
+                               if 'style' in x]
+                next_style_id = len(style_list) + 1
+                for index in range(len(style_list)):
+                    if not any("style{}.xml".format((index + 1)) in s for s in style_list):
+                        next_style_id = index + 1
+                        break
                 copyfile(xml_style.format(TEMP_FOLDER_SOURCE, style_id),
                          xml_style.format(TEMP_FOLDER_TARGET, next_style_id))
                 content_types.append(
@@ -279,9 +280,13 @@ def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
                 next_style_id = "-1"
 
             if colors_filename is not None:
-                next_colors_id = len([f for f
-                                      in os.listdir('{}/ppt/charts/'.format(TEMP_FOLDER_TARGET))
-                                      if 'colors' in f]) + 1
+                colors_list = [x for x in os.listdir("{}/ppt/charts/".format(TEMP_FOLDER_TARGET))
+                               if 'colors' in x]
+                next_colors_id = len(colors_list) + 1
+                for index in range(len(colors_list)):
+                    if not any("colors{}.xml".format((index + 1)) in s for s in colors_list):
+                        next_colors_id = index + 1
+                        break
                 copyfile(xml_colors.format(TEMP_FOLDER_SOURCE, colors_id),
                          xml_colors.format(TEMP_FOLDER_TARGET, next_colors_id))
                 content_types.append(
@@ -296,7 +301,13 @@ def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
                 next_colors_id = "-1"
 
             if xlsx_filename is not None:
-                next_xlsx_id = len([f for f in os.listdir('{}/ppt/embeddings/'.format(TEMP_FOLDER_TARGET))]) + 1
+                xlsx_list = [x for x in os.listdir("{}/ppt/embeddings/".format(TEMP_FOLDER_TARGET))
+                               if '.xlsx' in x]
+                next_xlsx_id = len(xlsx_list) + 1
+                for index in range(len(xlsx_list)):
+                    if not any("Microsoft_Excel____{}.xlsx".format((index + 1)) in s for s in xlsx_list):
+                        next_xlsx_id = index + 1
+                        break
                 copyfile(xml_xlsx.format(TEMP_FOLDER_SOURCE, xlsx_id),
                          xml_xlsx.format(TEMP_FOLDER_TARGET, next_xlsx_id))
             else:
@@ -366,11 +377,43 @@ def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
             )
         )
 
+    treeT = etree.parse('{}/[Content_Types].xml'.format(TEMP_FOLDER_TARGET))
+    treeS = etree.parse('{}/[Content_Types].xml'.format(TEMP_FOLDER_SOURCE))
+    rootT = treeT.getroot()
+    rootS = treeS.getroot()
+    default_rootSLst = rootS.findall("*[@Extension]")
+
+    extensions_T = [el.attrib.get('Extension') for el in rootT.findall("*[@Extension]")]
+
+    for element in default_rootSLst:
+        if element.attrib["Extension"] not in extensions_T:
+            rootT.append(element)
+
+    with open('{}/[Content_Types].xml'.format(TEMP_FOLDER_TARGET), 'w') as file:
+        # Hack :: Inject the top tag [<?xml ...] back into the file.
+        #         (Can't do it with lxml?)
+        file.writelines(
+            "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>{}".format(
+                etree.tostring(rootT)
+            )
+        )
+
     # Step 13. Find the next slide presentation relation id and add a new
     #          relation to the presentation.xml.rels relationship file
     tree = etree.parse('{}/ppt/_rels/presentation.xml.rels'.format(TEMP_FOLDER_TARGET))
     root = tree.getroot()
-    next_slide_rid = len(root.getchildren()) + 1
+
+    relationship_list = root.findall("*[@Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide']")
+    relationship_count = len(relationship_list)
+    next_slide_rid = relationship_count + 2
+    for index in range(len(relationship_list)):
+        relationship_list[index] = int(relationship_list[index].attrib["Id"].replace("rId", ""))
+        
+    for index in range(len(relationship_list)):
+        if (index + 2) not in relationship_list:
+            next_slide_rid = index + 2
+            break
+
     root.append(
         etree.XML(
             '<Relationship Id="rId{}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide{}.xml"/>'.format(
@@ -379,6 +422,21 @@ def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
             )
         )
     )
+
+    tags = root.find("*[@Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/tags']")
+    tags_rId = int(tags.attrib['Id'].replace("rId", ''))
+    if next_slide_rid >= tags_rId:
+        new_tags_rId = next_slide_rid + 1
+        tags.attrib['Id'] = "rId{}".format(new_tags_rId)
+        new_presProps_rId = new_tags_rId + 1
+        root.find("*[@Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps']").attrib['Id'] = "rId{}".format(new_presProps_rId)
+        new_viewProps_rId = new_presProps_rId + 1
+        root.find("*[@Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps']").attrib['Id'] = "rId{}".format(new_viewProps_rId)
+        new_theme_rId = new_viewProps_rId + 1
+        root.find("*[@Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme']").attrib['Id'] = "rId{}".format(new_theme_rId)
+        new_tableStyles_rId = new_theme_rId + 1
+        root.find("*[@Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles']").attrib['Id'] = "rId{}".format(new_tableStyles_rId)
+
     with open('{}/ppt/_rels/presentation.xml.rels'.format(TEMP_FOLDER_TARGET), 'w') as file:
         # Hack :: Inject the top tag [<?xml ...] back into the file.
         #         (Can't do it with lxml?)
@@ -399,6 +457,15 @@ def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
     sldId = deepcopy(sldIdLst.getchildren()[0])  # get the first child
     sldId.attrib['id'] = unicode(max([int(x.attrib['id']) for x in sldIdLst]) + 1)
     sldId.attrib['{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id'] = "rId{}".format(next_slide_rid)
+    tags = root.find(
+        './/p:custDataLst',
+        {'p': "http://schemas.openxmlformats.org/presentationml/2006/main"}
+    )[0]
+    tags_rId = int(tags.attrib['{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id'].replace("rId", ''))
+    if next_slide_rid >= tags_rId:
+        new_tags_rId = next_slide_rid + 1
+        tags.attrib['{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id'] = "rId{}".format(new_tags_rId)
+
     sldIdLst.append(sldId)
 
     with open('{}/ppt/presentation.xml'.format(TEMP_FOLDER_TARGET), 'w') as file:
@@ -410,34 +477,7 @@ def duplicate_pptx_sheet(filename, slide_number, filename_output=None):
             )
         )
 
-    # Step 15. Edit docProps/app.xml
-    # tree = etree.parse('{}/docProps/app.xml'.format(TEMP_FOLDER_TARGET))
-    # root = tree.getroot()
-    # Paragraphs = root.find("{http://schemas.openxmlformats.org/officeDocument/2006/extended-properties}Paragraphs")
-    # Paragraphs.text = unicode(int(Paragraphs.text) + 2)
-    # Slides = root.find("{http://schemas.openxmlformats.org/officeDocument/2006/extended-properties}Slides")
-    # Slides.text = unicode(int(Slides.text) + 1)
-    # HeadingPairs = root.find("{http://schemas.openxmlformats.org/officeDocument/2006/extended-properties}HeadingPairs")
-    # vector = HeadingPairs.find("{http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes}vector")
-    # vt = vector.getchildren()[7].getchildren()[0]
-    # vt.text = unicode(int(vt.text) + 1)
-    # TitlesOfParts = root.find("{http://schemas.openxmlformats.org/officeDocument/2006/extended-properties}TitlesOfParts")
-    # vector = TitlesOfParts.getchildren()[0]
-    # vector.attrib["size"] = unicode(int(vector.attrib["size"]) + 1)
-    # lpstr = deepcopy(vector.getchildren()[len(vector) - 1])
-    # vector.append(lpstr)
-
-    with open('{}/docProps/app.xml'.format(TEMP_FOLDER_TARGET), 'w') as file:
-        # Hack :: Inject the top tag [<?xml ...] back into the file.
-        #         (Can't do it with lxml?)
-        file.writelines(
-            "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>{}".format(
-                etree.tostring(root)
-            )
-        )
-
-    opc.repackage(TEMP_FOLDER_TARGET, filename_output)
-
+    opc.repackage(TEMP_FOLDER_TARGET, target_path)
     rmtree(TEMP_FOLDER_TARGET)
     rmtree(TEMP_FOLDER_SOURCE)
 
@@ -445,5 +485,5 @@ target_path = sys.argv[1]
 copy_path = sys.argv[2]
 copy_index = int(sys.argv[3])
 
-duplicate_pptx_sheet(copy_path, copy_index, target_path)
+copy_pptx_sheet(copy_path, copy_index, target_path)
 print("")
